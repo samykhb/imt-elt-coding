@@ -89,13 +89,11 @@ def create_daily_revenue():
     """
     print("  📊 Gold: daily_revenue")
 
-    # TODO: Option A — SQL method (recommended for performance)
-    # Write the SQL query above and use pd.read_sql() + _create_gold_table()
-
-    # TODO: Option B — Pandas method (alternative)
-    # orders = _read_silver("fct_orders")
-    # lines = _read_silver("fct_order_lines")
-    # ... aggregations with groupby ...
+    # TODO: Create daily_revenue using SQL
+    # Write a SQL query that joins fct_orders + fct_order_lines,
+    # groups by date, and computes the aggregates described in the docstring.
+    # Exclude cancelled/chargeback orders.
+    # Then: pd.read_sql() → _create_gold_table()
 
     raise NotImplementedError("TODO: Implement create_daily_revenue()")
 
@@ -123,8 +121,9 @@ def create_product_performance():
     print("  🏆 Gold: product_performance")
 
     # TODO: Create the product_performance table
-    # Join fct_order_lines + dim_products to get name and category
-    # Group by product and aggregate sales
+    # Join fct_order_lines with dim_products (and filter via fct_orders)
+    # Group by product_id + product details, aggregate sales metrics
+    # See the expected columns in the docstring above
 
     raise NotImplementedError("TODO: Implement create_product_performance()")
 
@@ -157,8 +156,9 @@ def create_customer_ltv():
     print("  💰 Gold: customer_ltv")
 
     # TODO: Create the customer_ltv table
-    # Join fct_orders + dim_users
-    # Group by customer and aggregate
+    # Join fct_orders with dim_users
+    # Group by customer, compute the aggregates listed in the docstring
+    # Hint: MIN/MAX for dates, EXTRACT(DAY FROM ...) for tenure
 
     raise NotImplementedError("TODO: Implement create_customer_ltv()")
 
@@ -175,9 +175,7 @@ def create_gold_layer():
     print(f"{'='*60}\n")
 
     # TODO: Call each Gold creation function
-    # create_daily_revenue()
-    # create_product_performance()
-    # create_customer_ltv()
+    # There are 3 functions: daily_revenue, product_performance, customer_ltv
 
     raise NotImplementedError("TODO: Implement create_gold_layer()")
 

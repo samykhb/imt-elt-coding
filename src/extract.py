@@ -84,11 +84,8 @@ def _read_csv_from_s3(s3_key: str) -> pd.DataFrame:
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/get_object.html
     """
     # TODO: Download the CSV from S3 and return it as a DataFrame
-    # Hint:
-    #   s3 = _get_s3_client()
-    #   response = s3.get_object(Bucket=S3_BUCKET, Key=s3_key)
-    #   csv_content = response["Body"].read().decode("utf-8")
-    #   return pd.read_csv(StringIO(csv_content))
+    # Steps: get S3 client → get_object() → read & decode the body → pd.read_csv()
+    # Remember: read_csv() expects a file-like object, not a raw string
     raise NotImplementedError("TODO: Implement _read_csv_from_s3()")
 
 
@@ -110,11 +107,8 @@ def _read_jsonl_from_s3(s3_key: str) -> pd.DataFrame:
         https://pandas.pydata.org/docs/reference/api/pandas.read_json.html
     """
     # TODO: Download the JSONL from S3 and return it as a DataFrame
-    # Hint:
-    #   s3 = _get_s3_client()
-    #   response = s3.get_object(Bucket=S3_BUCKET, Key=s3_key)
-    #   jsonl_content = response["Body"].read().decode("utf-8")
-    #   return pd.read_json(StringIO(jsonl_content), lines=True)
+    # Very similar to _read_csv_from_s3(), but use pd.read_json() instead.
+    # Key parameter: lines=True (tells pandas each line is a separate JSON object)
     raise NotImplementedError("TODO: Implement _read_jsonl_from_s3()")
 
 
@@ -145,18 +139,12 @@ def _read_partitioned_parquet_from_s3(s3_prefix: str) -> pd.DataFrame:
         https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
     """
     # TODO: List all Parquet files under s3_prefix and concatenate them
-    # Hint:
-    #   s3 = _get_s3_client()
-    #   paginator = s3.get_paginator("list_objects_v2")
-    #   dfs = []
-    #   for page in paginator.paginate(Bucket=S3_BUCKET, Prefix=s3_prefix):
-    #       for obj in page.get("Contents", []):
-    #           key = obj["Key"]
-    #           if key.endswith(".parquet"):
-    #               response = s3.get_object(Bucket=S3_BUCKET, Key=key)
-    #               table = pq.read_table(BytesIO(response["Body"].read()))
-    #               dfs.append(table.to_pandas())
-    #   return pd.concat(dfs, ignore_index=True)
+    # Strategy:
+    #   1. Use s3.get_paginator("list_objects_v2") to list all objects under the prefix
+    #   2. Filter keys that end with ".parquet"
+    #   3. For each file: download with get_object(), read with pq.read_table()
+    #      (Parquet is binary → use BytesIO, not StringIO)
+    #   4. Collect all DataFrames in a list, then pd.concat() them
     raise NotImplementedError("TODO: Implement _read_partitioned_parquet_from_s3()")
 
 
@@ -185,6 +173,8 @@ def _load_to_bronze(df: pd.DataFrame, table_name: str, if_exists: str = "replace
         https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
     """
     # TODO: Load the DataFrame into PostgreSQL using df.to_sql()
+    # You'll need: get_engine(), and the right to_sql() parameters
+    # Don't forget: index=False (we don't want the pandas index as a column)
     raise NotImplementedError("TODO: Implement _load_to_bronze()")
 
 
@@ -206,12 +196,8 @@ def extract_products() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The catalog data.
     """
-    # TODO: Implement product catalog extraction
-    # Hint:
-    #   df = _read_csv_from_s3(f"{S3_PREFIX}/catalog/products.csv")
-    #   print(f"  📦 Products: {len(df)} rows, {len(df.columns)} columns")
-    #   _load_to_bronze(df, "products")
-    #   return df
+    # TODO: Read → Log → Load → Return
+    # Use _read_csv_from_s3() with the right S3 key, then _load_to_bronze()
     raise NotImplementedError("TODO: Implement extract_products()")
 
 
@@ -225,8 +211,7 @@ def extract_users() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The user data.
     """
-    # TODO: Implement user extraction
-    # Same pattern as extract_products() but with "raw/users/users.csv" → "users"
+    # TODO: Same pattern as extract_products()
     raise NotImplementedError("TODO: Implement extract_users()")
 
 
@@ -240,8 +225,7 @@ def extract_orders() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The order data.
     """
-    # TODO: Implement order extraction
-    # Same pattern with "raw/orders/orders.csv" → "orders"
+    # TODO: Same pattern as extract_products()
     raise NotImplementedError("TODO: Implement extract_orders()")
 
 
@@ -255,8 +239,7 @@ def extract_order_line_items() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The order line item data.
     """
-    # TODO: Implement order line item extraction
-    # Same pattern with "raw/order_line_items/order_line_items.csv" → "order_line_items"
+    # TODO: Same pattern as extract_products()
     raise NotImplementedError("TODO: Implement extract_order_line_items()")
 
 
@@ -278,12 +261,7 @@ def extract_reviews() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The reviews data.
     """
-    # TODO: Implement review extraction
-    # Hint:
-    #   df = _read_jsonl_from_s3(f"{S3_PREFIX}/reviews/reviews.jsonl")
-    #   print(f"  ⭐ Reviews: {len(df)} rows, {len(df.columns)} columns")
-    #   _load_to_bronze(df, "reviews")
-    #   return df
+    # TODO: Same pattern, but use _read_jsonl_from_s3() instead of _read_csv_from_s3()
     raise NotImplementedError("TODO: Implement extract_reviews()")
 
 
@@ -314,12 +292,8 @@ def extract_clickstream() -> pd.DataFrame:
     Returns:
         pd.DataFrame: The clickstream data.
     """
-    # TODO: Implement clickstream extraction
-    # Hint:
-    #   df = _read_partitioned_parquet_from_s3(f"{S3_PREFIX}/clickstream/")
-    #   print(f"  🖱️ Clickstream: {len(df)} rows, {len(df.columns)} columns")
-    #   _load_to_bronze(df, "clickstream")
-    #   return df
+    # TODO: Same pattern, but use _read_partitioned_parquet_from_s3()
+    # Note: pass a prefix (folder path), not a file key
     raise NotImplementedError("TODO: Implement extract_clickstream()")
 
 
@@ -344,17 +318,8 @@ def extract_all() -> dict[str, pd.DataFrame]:
 
     results = {}
 
-    # TODO: Call each extract_*() function and store the result
-    # Hint:
-    #   # CSV datasets
-    #   results["products"] = extract_products()
-    #   results["users"] = extract_users()
-    #   results["orders"] = extract_orders()
-    #   results["order_line_items"] = extract_order_line_items()
-    #   # JSONL datasets
-    #   results["reviews"] = extract_reviews()
-    #   # Parquet datasets
-    #   results["clickstream"] = extract_clickstream()
+    # TODO: Call each extract_*() function and store the result in the dict
+    # There are 6 functions to call: 4 CSV + 1 JSONL + 1 Parquet
 
     raise NotImplementedError("TODO: Implement extract_all()")
 
