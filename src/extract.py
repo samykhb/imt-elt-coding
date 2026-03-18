@@ -175,7 +175,16 @@ def _load_to_bronze(df: pd.DataFrame, table_name: str, if_exists: str = "replace
     # TODO: Load the DataFrame into PostgreSQL using df.to_sql()
     # You'll need: get_engine(), and the right to_sql() parameters
     # Don't forget: index=False (we don't want the pandas index as a column)
-    raise NotImplementedError("TODO: Implement _load_to_bronze()")
+    try:
+        df.to_sql(name=table_name, 
+                con=engine, 
+                schema=BRONZE_SCHEMA,
+                if_exists=if_exists,
+                index=False)
+    except Exception as e:
+        print(f"Exception occured: {e}")
+        raise e
+
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +207,15 @@ def extract_products() -> pd.DataFrame:
     """
     # TODO: Read → Log → Load → Return
     # Use _read_csv_from_s3() with the right S3 key, then _load_to_bronze()
-    raise NotImplementedError("TODO: Implement extract_products()")
+    try:
+        df = _read_csv_from_s3("raw/catalog/products.csv")
+        print(f"Number of rows for products.csv: {df.shape[0]}")
+        print(f"Number of columns for products.csv: {df.shape[1]}")
+        _load_to_bronze(df, table_name="products", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting products.csv: {e}")
+        raise e
 
 
 def extract_users() -> pd.DataFrame:
@@ -212,7 +229,15 @@ def extract_users() -> pd.DataFrame:
         pd.DataFrame: The user data.
     """
     # TODO: Same pattern as extract_products()
-    raise NotImplementedError("TODO: Implement extract_users()")
+    try:
+        df = _read_csv_from_s3("raw/users/users.csv")
+        print(f"Number of rows for users.csv: {df.shape[0]}")
+        print(f"Number of columns for users.csv: {df.shape[1]}")
+        _load_to_bronze(df, table_name="users", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting users.csv: {e}")
+        raise e
 
 
 def extract_orders() -> pd.DataFrame:
@@ -226,7 +251,15 @@ def extract_orders() -> pd.DataFrame:
         pd.DataFrame: The order data.
     """
     # TODO: Same pattern as extract_products()
-    raise NotImplementedError("TODO: Implement extract_orders()")
+    try:
+        df = _read_csv_from_s3("raw/orders/orders.csv")
+        print(f"Number of rows for orders.csv: {df.shape[0]}")
+        print(f"Number of columns for orders.csv: {df.shape[1]}")
+        _load_to_bronze(df, table_name="orders", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting orders.csv: {e}")
+        raise e
 
 
 def extract_order_line_items() -> pd.DataFrame:
@@ -240,8 +273,15 @@ def extract_order_line_items() -> pd.DataFrame:
         pd.DataFrame: The order line item data.
     """
     # TODO: Same pattern as extract_products()
-    raise NotImplementedError("TODO: Implement extract_order_line_items()")
-
+    try:
+        df = _read_csv_from_s3("raw/order_line_items/order_line_items.csv")
+        print(f"Number of rows for order_line_items.csv: {df.shape[0]}")
+        print(f"Number of columns for order_line_items.csv: {df.shape[1]}")
+        _load_to_bronze(df, table_name="order_line_items", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting order_line_items.csv: {e}")
+        raise e
 
 # ---------------------------------------------------------------------------
 # Extract functions — JSONL datasets
@@ -262,7 +302,15 @@ def extract_reviews() -> pd.DataFrame:
         pd.DataFrame: The reviews data.
     """
     # TODO: Same pattern, but use _read_jsonl_from_s3() instead of _read_csv_from_s3()
-    raise NotImplementedError("TODO: Implement extract_reviews()")
+    try:
+        df = _read_csv_from_s3("raw/reviews/reviews.jsonl")
+        print(f"Number of rows for reviews.jsonl: {df.shape[0]}")
+        print(f"Number of columns for reviews.jsonl: {df.shape[1]}")
+        _load_to_bronze(df, table_name="reviews", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting reviews.jsonl: {e}")
+        raise e
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +342,15 @@ def extract_clickstream() -> pd.DataFrame:
     """
     # TODO: Same pattern, but use _read_partitioned_parquet_from_s3()
     # Note: pass a prefix (folder path), not a file key
-    raise NotImplementedError("TODO: Implement extract_clickstream()")
+    try:
+        df = _read_partitioned_parquet_from_s3("raw/clickstream/")
+        print(f"Number of rows for the full partition of clickstream: {df.shape[0]}")
+        print(f"Number of columns for the full partition of clickstream: {df.shape[1]}")
+        _load_to_bronze(df, table_name="clickstream", if_exists="replace")
+        return df
+    except Exception as e:
+        print(f"Exception occured while extracting the full partition of clickstream: {e}")
+        raise e
 
 
 # ---------------------------------------------------------------------------
@@ -320,11 +376,18 @@ def extract_all() -> dict[str, pd.DataFrame]:
 
     # TODO: Call each extract_*() function and store the result in the dict
     # There are 6 functions to call: 4 CSV + 1 JSONL + 1 Parquet
-
-    raise NotImplementedError("TODO: Implement extract_all()")
-
-    print(f"\n  ✅ Extraction complete — {len(results)} tables loaded into {BRONZE_SCHEMA}")
-    return results
+    try:
+        results["products"] = extract_products()
+        results["users"] = extract_users()
+        results["orders"] = extract_orders()
+        results["order_line_items"] = extract_order_line_items()
+        results["reviews"] = extract_reviews()
+        results["clickstream"] = extract_clickstream()
+        print(f"\n  ✅ Extraction complete — {len(results)} tables loaded into {BRONZE_SCHEMA}")
+        return results
+    except Exception as e:
+        print(f"Exception occured while extracting all the sources into Bronze: {e}")
+        raise e
 
 
 # ---------------------------------------------------------------------------
