@@ -73,7 +73,7 @@ def _drop_internal_columns(df: pd.DataFrame) -> pd.DataFrame:
             internal_cols.append(col)
     
     df.drop(columns=internal_cols, inplace=True)
-    print(f"{len(internal_cols)} have been removed from the original dataframe.")
+    print(f"{len(internal_cols)} columns have been removed from the original dataframe.")
 
     return df
 
@@ -117,21 +117,20 @@ def transform_products() -> pd.DataFrame:
     """
     print("  📦 Transform: products → dim_products")
     df = _read_bronze("products")
-
-    # TODO: Step 1 — Drop internal columns (use the helper you wrote above)
-    
-    # TODO: Step 2 — Normalize the 'tags' column
+    # Step 1 — Drop internal columns (use the helper you wrote above)
+    df = df.drop(columns=['_internal_cost_usd', '_supplier_id'])
+    # Step 2 — Normalize the 'tags' column
     # The tags use '|' as separator — replace with ', ' for cleanliness
     # Look at: .str.replace()
-
-    # TODO: Step 3 — Validate price_usd (remove rows where price <= 0)
-
-    # TODO: Step 4 — Convert boolean columns (is_active, is_hype_product)
+    df['tags'] = df['tags'].str.replace('|', ',', regex=False)
+    # Step 3 — Validate price_usd (remove rows where price <= 0)
+    df['price_usd'] = pd.to_numeric(df['price_usd'], errors='coerce')
+    df = df[df['price_usd'] > 0]
+    # Step 4 — Convert boolean columns (is_active, is_hype_product)
     # Look at: .astype(bool)
-
-    # TODO: Step 5 — Load into Silver as "dim_products"
-
-    raise NotImplementedError("TODO: Implement transform_products()")
+    df = df.astype({"is_active": bool, "is_hype_product": bool})
+    # Step 5 — Load into Silver as "dim_products"
+    _load_to_silver(df, "dim_products", if_exists="replace")
     return df
 
 
@@ -156,16 +155,15 @@ def transform_users() -> pd.DataFrame:
     print("  👤 Transform: users → dim_users")
     df = _read_bronze("users")
 
-    # TODO: Step 1 — Drop internal columns (especially PII: passwords, IPs, fingerprints)
+    # Step 1 — Drop internal columns (especially PII: passwords, IPs, fingerprints)
+    df = _drop_internal_columns(df)
 
-    # TODO: Step 2 — Replace NULL loyalty_tier with 'none'
-    # Look at: .fillna()
-
-    # TODO: Step 3 — Normalize emails (lowercase + strip whitespace)
-
-    # TODO: Step 4 — Load into Silver as "dim_users"
-
-    raise NotImplementedError("TODO: Implement transform_users()")
+    # Step 2 — Replace NULL loyalty_tier with 'none'
+    df.fillna(inplace=True,value='none')
+    # Step 3 — Normalize emails (lowercase + strip whitespace)
+    df["email"] = df["email"].str.strip().str.lower()
+    # Step 4 — Load into Silver as "dim_users"
+    _load_to_silver(df, "dim_users")
     return df
 
 
@@ -258,14 +256,18 @@ def transform_all() -> dict[str, pd.DataFrame]:
     print(f"  🥈 TRANSFORM → Silver ({SILVER_SCHEMA})")
     print(f"{'='*60}\n")
 
-    results = {}
-
-    # TODO: Call each transform_*() function and store the result in the dict
     # There are 4 functions to call, each returns a DataFrame
     # Keys should match the Silver table names: dim_products, dim_users, fct_orders, fct_order_lines
-
-    raise NotImplementedError("TODO: Implement transform_all()")
-
+    products_df = transform_products()
+    users_df = transform_users()
+    orders_df = transform_orders()
+    order_line_items_df = transform_order_line_items()
+    results = {
+        "dim_products" : products_df, 
+        "dim_users": users_df, 
+        "fct_orders": orders_df, 
+        "fct_order_lines" : order_line_items_df
+    }
     print(f"\n  ✅ Transformation complete — {len(results)} tables in {SILVER_SCHEMA}")
     return results
 
